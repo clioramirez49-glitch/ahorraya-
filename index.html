@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AhorraYa – Asistente de Ahorro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0a0e1a; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(74,222,128,0.3); border-radius: 4px; }
+    body { font-family: 'DM Sans', sans-serif; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; position: relative; overflow-x: hidden; }
+    .blob { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; }
+    .blob-1 { width: 500px; height: 500px; background: #16a34a; opacity: .1; top: -180px; left: -180px; }
+    .blob-2 { width: 400px; height: 400px; background: #15803d; opacity: .1; bottom: -100px; right: -100px; }
+    .blob-3 { width: 280px; height: 280px; background: #4ade80; opacity: .05; top: 45%; left: 50%; transform: translateX(-50%); }
+    .wrapper { position: relative; z-index: 1; width: 100%; max-width: 680px; display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 2rem; }
+    header { display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.4rem; background: rgba(10,14,26,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(74,222,128,0.12); position: sticky; top: 0; z-index: 100; }
+    .logo-icon { width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg,#16a34a,#4ade80); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 0 20px rgba(74,222,128,.3); flex-shrink: 0; }
+    .logo-text { font-family: 'Syne', sans-serif; font-size: 1.55rem; font-weight: 800; letter-spacing: -.5px; }
+    .logo-sub { font-size: .7rem; color: rgba(74,222,128,.7); text-transform: uppercase; letter-spacing: .5px; margin-top: 1px; }
+    .badge { margin-left: auto; background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); border-radius: 20px; padding: .3rem .85rem; color: #4ade80; font-size: .7rem; font-weight: 600; display: flex; align-items: center; gap: .4rem; white-space: nowrap; }
+    .badge::before { content:''; width:7px; height:7px; border-radius:50%; background:#4ade80; animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    main { flex: 1; padding: 0 1rem; display: flex; flex-direction: column; }
+    .tabs { display: flex; gap: .5rem; margin-top: 1.1rem; }
+    .tab-btn { flex: 1; padding: .72rem 1rem; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: rgba(255,255,255,.4); font-weight: 600; font-family: 'DM Sans', sans-serif; font-size: .88rem; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: .45rem; }
+    .tab-btn.active { background: rgba(74,222,128,.12); border-color: rgba(74,222,128,.4); color: #4ade80; }
+    .tab-count { background: #16a34a; color: #fff; border-radius: 20px; padding: .08rem .5rem; font-size: .7rem; font-weight: 700; }
+    .panel { display: none; flex-direction: column; gap: .8rem; margin-top: 1rem; flex: 1; }
+    .panel.active { display: flex; }
+    .messages { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 20px; padding: 1.1rem; min-height: 300px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: .9rem; }
+    .msg-row { display: flex; }
+    .msg-row.user { justify-content: flex-end; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#16a34a,#4ade80); display: flex; align-items: center; justify-content: center; font-size: .82rem; flex-shrink: 0; margin-right: .6rem; margin-top: 2px; }
+    .bubble { max-width: 82%; padding: .8rem 1rem; border-radius: 18px; font-size: .88rem; line-height: 1.6; }
+    .bubble.user { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; font-weight: 500; border-bottom-right-radius: 4px; }
+    .bubble.assistant { background: rgba(255,255,255,.07); color: rgba(255,255,255,.9); border: 1px solid rgba(255,255,255,.08); border-bottom-left-radius: 4px; }
+    .dots { display: flex; gap: 4px; align-items: center; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: bounce 1.2s infinite; }
+    .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+    .quick-wrap { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .quick-btn { padding: .42rem .85rem; border-radius: 20px; border: 1px solid rgba(74,222,128,.25); background: rgba(74,222,128,.06); color: rgba(255,255,255,.7); font-size: .77rem; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: all .18s; }
+    .quick-btn:hover { background: rgba(74,222,128,.15); color: #fff; border-color: rgba(74,222,128,.5); }
+    .input-row { display: flex; gap: .55rem; }
+    .chat-input, .list-input { flex: 1; padding: .88rem 1.05rem; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); color: #fff; font-size: .9rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .2s; }
+    .chat-input:focus, .list-input:focus { border-color: rgba(74,222,128,.45); }
+    .chat-input::placeholder, .list-input::placeholder { color: rgba(255,255,255,.3); }
+    .send-btn, .add-btn { padding: .88rem 1.2rem; border-radius: 14px; border: none; background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 18px rgba(34,197,94,.3); transition: opacity .2s; }
+    .add-btn { padding: .88rem 1rem; font-size: 1.4rem; }
+    .list-stats { display: flex; gap: .65rem; }
+    .stat-pill { flex: 1; padding: .65rem .9rem; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); text-align: center; }
+    .stat-num { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 800; color: #4ade80; }
+    .stat-label { font-size: .68rem; color: rgba(255,255,255,.4); margin-top: 1px; }
+    .items-list { display: flex; flex-direction: column; gap: .38rem; }
+    .item-row { display: flex; align-items: center; gap: .72rem; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: .75rem 1rem; animation: slideIn .2s ease; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .item-row.done { opacity: .4; }
+    .item-check { width: 22px; height: 22px; border-radius: 8px; border: 2px solid rgba(74,222,128,.4); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; font-size: .75rem; }
+    .item-check.checked { background: #16a34a; border-color: #16a34a; }
+    .item-name { flex: 1; font-size: .92rem; color: rgba(255,255,255,.88); font-weight: 500; }
+    .item-name.done { text-decoration: line-through; color: rgba(255,255,255,.3); }
+    .rm-btn { background: none; border: none; color: rgba(255,100,100,.5); cursor: pointer; font-size: 1rem; transition: color .15s; line-height: 1; }
+    .rm-btn:hover { color: rgba(255,100,100,.9); }
+    .empty { text-align: center; padding: 2.5rem 1rem; color: rgba(255,255,255,.25); font-size: .88rem; line-height: 1.9; }
+    .empty-icon { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+    .analyze-btn { padding: 1rem 1.5rem; border-radius: 16px; border: none; background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; font-weight: 700; font-size: 1rem; font-family: 'DM Sans', sans-serif; cursor: pointer; box-shadow: 0 6px 24px rgba(34,197,94,.35); transition: all .2s; display: flex; align-items: center; justify-content: center; gap: .55rem; }
+    .analyze-btn:hover { transform: translateY(-1px); }
+    .analyze-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+    @media(min-width:600px){ .messages{ max-height:520px; } }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="wrapper">
+    <header>
+      <div class="logo-icon">🛒</div>
+      <div>
+        <div class="logo-text">AhorraYa</div>
+        <div class="logo-sub">Asistente de ahorro inteligente</div>
+      </div>
+      <div class="badge">IA Activa</div>
+    </header>
+    <main>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('chat')">💬 Asistente</button>
+        <button class="tab-btn" id="list-tab-btn" onclick="switchTab('list')">🛒 Mi Lista</button>
+      </div>
+      <div class="panel active" id="panel-chat">
+        <div class="messages" id="messages"></div>
+        <div class="quick-wrap" id="quick-wrap">
+          <button class="quick-btn" onclick="sendMsg('¿Cómo ahorrar en proteínas como pollo o carne?')">🥩 ¿Cómo ahorrar en proteínas?</button>
+          <button class="quick-btn" onclick="sendMsg('¿Cuándo es mejor comprar frutas y verduras baratas?')">🥦 ¿Cuándo comprar frutas baratas?</button>
+          <button class="quick-btn" onclick="sendMsg('Tengo $300 pesos, ¿qué puedo cocinar esta semana?')">💰 Con $300 ¿qué cocino?</button>
+          <button class="quick-btn" onclick="sendMsg('¿Qué marcas propias del súper son buenas y económicas?')">🏷️ ¿Marcas propias buenas?</button>
+        </div>
+        <div class="input-row">
+          <input class="chat-input" id="chat-input" placeholder="Escribe tu pregunta de ahorro..." onkeydown="if(event.key==='Enter')sendMsg()" />
+          <button class="send-btn" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+      <div class="panel" id="panel-list">
+        <div class="input-row">
+          <input class="list-input" id="list-input" placeholder="Agrega un producto (ej: leche, pollo...)" onkeydown="if(event.key==='Enter')addItem()" />
+          <button class="add-btn" onclick="addItem()">+</button>
+        </div>
+        <div class="list-stats" id="list-stats" style="display:none">
+          <div class="stat-pill"><div class="stat-num" id="stat-total">0</div><div class="stat-label">productos</div></div>
+          <div class="stat-pill"><div class="stat-num" id="stat-done">0</div><div class="stat-label">comprados</div></div>
+          <div class="stat-pill"><div class="stat-num" id="stat-left">0</div><div class="stat-label">pendientes</div></div>
+        </div>
+        <div id="items-container">
+          <div class="empty" id="empty-state"><span class="empty-icon">🛒</span>Tu lista está vacía.<br>Agrega productos arriba y luego<br><strong style="color:rgba(74,222,128,.7)">analiza cómo ahorrar</strong></div>
+          <div class="items-list" id="items-list"></div>
+        </div>
+        <button class="analyze-btn" id="analyze-btn" onclick="analyzeList()" disabled>✨ Analizar lista y encontrar ahorros</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let items = [], idCounter = 0;
+
+    // ── RESPUESTAS INTELIGENTES ──
+    const RESPUESTAS = [
+      {
+        keys: ['proteína','proteinas','pollo','carne','res','cerdo','pechuga'],
+        resp: `🥩 <strong>Cómo ahorrar en proteínas:</strong><br><br>
+🐔 <strong>Pollo entero vs piezas:</strong> Comprar pollo entero puede ser hasta 40% más barato que comprarlo en piezas. Pídele al carnicero que lo corte.<br><br>
+🥚 <strong>Huevo:</strong> Es la proteína más económica. Una docena de huevos (~$35) equivale en proteína a 500g de pecho de pollo (~$80).<br><br>
+🐟 <strong>Atún en lata:</strong> Marca propia del Walmart (Great Value) o Chedraui cuesta ~$18 por lata. Excelente opción.<br><br>
+🛒 <strong>Día de descuentos:</strong> Walmart tiene descuentos en carnes los <strong>martes y miércoles</strong>. Chedraui los <strong>jueves</strong>.<br><br>
+💡 <strong>Tip:</strong> Compra en cantidad cuando hay oferta y congela. Puedes ahorrar hasta un <strong>30%</strong> haciendo esto.`
+      },
+      {
+        keys: ['fruta','verdura','vegetal','jitomate','tomate','cebolla','chile','aguacate','limón','limon'],
+        resp: `🥦 <strong>Cómo ahorrar en frutas y verduras:</strong><br><br>
+📅 <strong>Mejor día para comprar:</strong> Los <strong>martes y miércoles</strong> los supermercados reciben producto fresco con descuentos de hasta 25%.<br><br>
+🏪 <strong>Mercado vs Súper:</strong> En el mercado local las frutas y verduras cuestan entre 20-40% menos que en el súper.<br><br>
+🥑 <strong>Aguacate:</strong> Compra cuando baje de $30/kg. Puedes guardarlo verde en el refri para que madure despacio.<br><br>
+🍋 <strong>Limón:</strong> Cuando esté caro (~$60/kg), sustitúyelo por vinagre blanco en muchas recetas.<br><br>
+💡 <strong>Tip de temporada:</strong> Las frutas y verduras de temporada cuestan hasta 50% menos. En junio: mango, sandía y elote son las opciones más económicas.`
+      },
+      {
+        keys: ['300','200','400','500','100','presupuesto','poco dinero','barato','económico','economico','semana','cocinar'],
+        resp: `💰 <strong>Menú económico para la semana con ~$300:</strong><br><br>
+🛒 <strong>Lista de compras (~$280):</strong><br>
+• Arroz 1kg — $25<br>
+• Frijoles 1kg — $35<br>
+• Huevo 12pz — $38<br>
+• Pollo 1kg — $75<br>
+• Papa 1kg — $20<br>
+• Cebolla/ajo/chile — $25<br>
+• Jitomate 1kg — $22<br>
+• Aceite 500ml — $30<br>
+• Tortillas 1kg — $25<br><br>
+🍽️ <strong>Con esto puedes hacer:</strong> Caldo de pollo, arroz con huevo, frijoles de olla, papas fritas, quesadillas, enfrijoladas.<br><br>
+💡 <strong>Tip:</strong> El arroz y los frijoles son los alimentos más eficientes en costo-nutrición que existen.`
+      },
+      {
+        keys: ['marca','propia','walmart','chedraui','soriana','bodega','aurrera','great value','precio uno'],
+        resp: `🏷️ <strong>Marcas propias que sí valen la pena:</strong><br><br>
+🟦 <strong>Walmart / Bodega Aurrerá:</strong><br>
+• Great Value — aceite, arroz, frijoles, atún, papel higiénico. Ahorro vs marca líder: <strong>30-45%</strong><br><br>
+🟠 <strong>Chedraui:</strong><br>
+• Precio Uno — leche, azúcar, harina, jabón. Calidad muy similar a marcas conocidas.<br><br>
+🔴 <strong>Soriana:</strong><br>
+• Soriana Básico — lácteos, cereales, productos de limpieza.<br><br>
+✅ <strong>Productos donde SÍ conviene marca propia:</strong> arroz, azúcar, sal, aceite, harina, frijoles, papel higiénico, servilletas, jabón de trastes.<br><br>
+❌ <strong>Donde puede no convenir:</strong> medicamentos, café (varía mucho el sabor), crema de cacahuate.`
+      },
+      {
+        keys: ['oferta','descuento','promoción','promocion','cuándo','cuando','dia','días','dias'],
+        resp: `📅 <strong>Mejores días y momentos para encontrar ofertas:</strong><br><br>
+🟦 <strong>Walmart / Bodega:</strong> Martes y miércoles — descuentos en carnes y productos frescos.<br><br>
+🟠 <strong>Chedraui:</strong> Jueves — "Día del ahorro" con descuentos en toda la tienda.<br><br>
+🔴 <strong>Soriana:</strong> Lunes — ofertas de inicio de semana en abarrotes.<br><br>
+🕐 <strong>Mejor hora del día:</strong> Por la <strong>noche (7-9pm)</strong> los supermercados reducen precio de productos frescos próximos a vencer — pan, lácteos, carnes.<br><br>
+📱 <strong>Apps útiles:</strong> Descarga la app de tu súper favorito. Walmart, Chedraui y Soriana tienen ofertas exclusivas en app.<br><br>
+💡 <strong>Tip:</strong> La primera semana del mes suele tener las mejores promociones en productos de limpieza e higiene.`
+      },
+      {
+        keys: ['leche','lacteo','lácteo','yogurt','queso','crema','mantequilla'],
+        resp: `🥛 <strong>Cómo ahorrar en lácteos:</strong><br><br>
+🥛 <strong>Leche:</strong> La leche en polvo (Nido o marca propia) sale hasta 35% más barata que la leche líquida y dura mucho más.<br><br>
+🧀 <strong>Queso:</strong> El queso de rancho o "queso de hebra" a granel en mercados locales es más barato que el empaquetado del súper.<br><br>
+🥄 <strong>Yogurt:</strong> El yogurt natural sin sabor es más económico que los saborizados. Agrégale fruta de temporada tú mismo.<br><br>
+💡 <strong>Tip:</strong> Compra lácteos los <strong>martes</strong> en Walmart o los <strong>jueves</strong> en Chedraui cuando hay descuentos en refrigerados.<br><br>
+🏷️ <strong>Marca propia recomendada:</strong> Leche Lala vs Great Value — la diferencia de precio es de ~$8 por litro con calidad muy similar.`
+      },
+      {
+        keys: ['limpieza','detergente','jabón','jabon','suavizante','cloro','trapeador','escoba'],
+        resp: `🧹 <strong>Cómo ahorrar en productos de limpieza:</strong><br><br>
+💧 <strong>Concentrados:</strong> Compra versiones concentradas de detergente — una bolsa de ~$35 rinde igual que 3 botellas de ~$40 cada una.<br><br>
+🏷️ <strong>Marca propia:</strong> En limpieza del hogar las marcas propias son casi idénticas a las líderes. Ahorro potencial: <strong>40-50%</strong><br><br>
+🛒 <strong>Compra por mayoreo:</strong> Artículos de limpieza no caducan — cuando estén en oferta, compra 3 o 4.<br><br>
+🍋 <strong>Alternativas naturales:</strong> Vinagre blanco + bicarbonato reemplazan varios productos de limpieza. Costo: ~$15 vs ~$60 de productos comerciales.<br><br>
+📅 <strong>Mejor momento:</strong> Primera semana del mes — los súpers sacan promociones de 2x1 o 3x2 en limpieza.`
+      },
+      {
+        keys: ['ahorrar','ahorro','consejos','tips','ayuda','cómo','como','dinero','gasto','gastar'],
+        resp: `💡 <strong>Los 7 mejores consejos para ahorrar en el súper:</strong><br><br>
+1️⃣ <strong>Haz una lista antes de ir</strong> — quien va sin lista gasta en promedio 23% más.<br><br>
+2️⃣ <strong>No vayas con hambre</strong> — el hambre impulsa compras no planeadas.<br><br>
+3️⃣ <strong>Compara precio por kilo/litro</strong>, no por precio total del empaque.<br><br>
+4️⃣ <strong>Compra marcas propias</strong> en básicos: arroz, azúcar, aceite, papel, jabón.<br><br>
+5️⃣ <strong>Aprovecha los días de descuento</strong> de cada súper (martes Walmart, jueves Chedraui).<br><br>
+6️⃣ <strong>Congela cuando hay oferta</strong> — especialmente carnes y pan.<br><br>
+7️⃣ <strong>Compara entre tiendas</strong> — no todo es más barato en el mismo lugar.<br><br>
+📊 Aplicando estos consejos puedes ahorrar entre <strong>$300 y $800 pesos al mes</strong> en una familia promedio.`
+      }
+    ];
+
+    const FALLBACK = `🤔 Interesante pregunta. Aquí algunos consejos generales de ahorro en el súper:<br><br>
+✅ Haz tu lista antes de ir y respétala.<br>
+✅ Compara precio por kilo o litro, no por precio total.<br>
+✅ Elige marcas propias en productos básicos (arroz, azúcar, aceite, jabón).<br>
+✅ Aprovecha días de descuento: <strong>martes en Walmart, jueves en Chedraui</strong>.<br>
+✅ Congela productos en oferta para usarlos después.<br><br>
+💬 Puedes preguntarme sobre: proteínas, frutas y verduras, lácteos, limpieza, marcas propias, o pedirme un menú económico para la semana.`;
+
+    function getResp(text) {
+      const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      for (const r of RESPUESTAS) {
+        if (r.keys.some(k => t.includes(k.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) return r.resp;
+      }
+      return FALLBACK;
+    }
+
+    // ── UI ──
+    function switchTab(t) {
+      document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (t==='chat'&&i===0)||(t==='list'&&i===1)));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-'+t).classList.add('active');
+    }
+
+    function appendMsg(role, html) {
+      const box = document.getElementById('messages');
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + role;
+      row.innerHTML = role === 'assistant'
+        ? `<div class="avatar">🤖</div><div class="bubble assistant">${html}</div>`
+        : `<div class="bubble user">${html}</div>`;
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+      return row;
+    }
+
+    function showTyping() {
+      const box = document.getElementById('messages');
+      const row = document.createElement('div');
+      row.className = 'msg-row assistant'; row.id = 'typing';
+      row.innerHTML = `<div class="avatar">🤖</div><div class="bubble assistant"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+      box.appendChild(row); box.scrollTop = box.scrollHeight;
+    }
+
+    function hideTyping() { document.getElementById('typing')?.remove(); }
+    function hideQuick() { const q = document.getElementById('quick-wrap'); if(q) q.style.display='none'; }
+
+    function sendMsg(text) {
+      const inp = document.getElementById('chat-input');
+      const val = text || inp.value.trim();
+      if (!val) return;
+      appendMsg('user', val);
+      inp.value = '';
+      hideQuick();
+      showTyping();
+      setTimeout(() => {
+        hideTyping();
+        appendMsg('assistant', getResp(val));
+      }, 1200);
+    }
+
+    // ── LIST ──
+    function addItem() {
+      const inp = document.getElementById('list-input');
+      const val = inp.value.trim();
+      if (!val) return;
+      items.push({ id: ++idCounter, name: val, checked: false });
+      inp.value = '';
+      renderList();
+    }
+
+    function toggleItem(id) {
+      const item = items.find(i=>i.id===id);
+      if (item) { item.checked = !item.checked; renderList(); }
+    }
+
+    function removeItem(id) {
+      items = items.filter(i=>i.id!==id);
+      renderList();
+    }
+
+    function renderList() {
+      const list = document.getElementById('items-list');
+      const empty = document.getElementById('empty-state');
+      const stats = document.getElementById('list-stats');
+      const btn = document.getElementById('analyze-btn');
+      const tabBtn = document.getElementById('list-tab-btn');
+      const done = items.filter(i=>i.checked).length;
+      list.innerHTML = '';
+      empty.style.display = items.length ? 'none' : 'block';
+      stats.style.display = items.length ? 'flex' : 'none';
+      btn.disabled = !items.length;
+      document.getElementById('stat-total').textContent = items.length;
+      document.getElementById('stat-done').textContent = done;
+      document.getElementById('stat-left').textContent = items.length - done;
+      tabBtn.innerHTML = `🛒 Mi Lista${items.length ? `<span class="tab-count">${items.length}</span>` : ''}`;
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'item-row' + (item.checked?' done':'');
+        row.innerHTML = `<div class="item-check ${item.checked?'checked':''}" onclick="toggleItem(${item.id})">${item.checked?'✓':''}</div><span class="item-name ${item.checked?'done':''}">${item.name}</span><button class="rm-btn" onclick="removeItem(${item.id})">✕</button>`;
+        list.appendChild(row);
+      });
+    }
+
+    function analyzeList() {
+      if (!items.length) return;
+      const nombres = items.map(i => i.name);
+      let resp = `📋 <strong>Análisis de tu lista (${items.length} productos):</strong><br><br>`;
+      nombres.forEach(n => {
+        const r = getProductTip(n);
+        resp += `🛒 <strong>${n}:</strong> ${r}<br><br>`;
+      });
+      resp += `💰 <strong>Ahorro potencial estimado:</strong> Entre 20-35% si sigues estas recomendaciones.`;
+      switchTab('chat');
+      appendMsg('user', `📋 Analizar mi lista (${items.length} producto${items.length>1?'s':''})`);
+      hideQuick();
+      showTyping();
+      setTimeout(() => { hideTyping(); appendMsg('assistant', resp); }, 1500);
+    }
+
+    function getProductTip(nombre) {
+      const n = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      if (/pollo|pechuga|muslo|pierna/.test(n)) return "Compra pollo entero y pídele al carnicero que lo corte. Ahorra hasta 40% vs piezas sueltas.";
+      if (/carne|res|bistec|milanesa|molida/.test(n)) return "Busca el miércoles en Walmart o jueves en Chedraui, hay descuentos en carnes frescas.";
+      if (/leche/.test(n)) return "La marca Great Value (Walmart) o Precio Uno (Chedraui) sale ~$8 más barata por litro con calidad similar.";
+      if (/huevo/.test(n)) return "Compra por kilo o por caja de 30 piezas, sale más barato que por docena. Busca marca propia del súper.";
+      if (/arroz/.test(n)) return "El arroz a granel o en bolsa de 2kg de marca propia puede costar 30% menos. Calidad muy similar.";
+      if (/frijol/.test(n)) return "Compra frijol a granel o en bolsa de 1kg de marca propia. Evita los frijoles enlatados, cuestan el doble.";
+      if (/aceite/.test(n)) return "Great Value o Precio Uno son excelentes opciones. Ahorra hasta 45% vs marcas líderes como Nutrioli.";
+      if (/azúcar|azucar/.test(n)) return "Compra marca propia, el azúcar es exactamente el mismo producto independientemente de la marca.";
+      if (/papa|patata/.test(n)) return "Compra en bolsa de 2kg en lugar de sueltas. En el mercado local pueden costar hasta 25% menos.";
+      if (/jitomate|tomate/.test(n)) return "Compra en mercado local o los martes en el súper. Evita el jitomate bola empacado, el suelto es más barato.";
+      if (/cebolla/.test(n)) return "Compra en bolsa de malla de 1kg o 2kg, sale más barato que por pieza suelta.";
+      if (/jabón|jabon|detergente/.test(n)) return "Elige marca propia o versión concentrada. Ahorro potencial: 40-50% con el mismo resultado.";
+      if (/pan/.test(n)) return "Por la noche (7-9pm) los supermercados bajan el precio del pan próximo a vencer. Puedes congelarlo.";
+      if (/atún|atun/.test(n)) return "Great Value o Herdez lata pequeña son las opciones más económicas. Calidad comparable a Dolores o Clemente.";
+      if (/agua/.test(n)) return "Un garrafón de 20L (~$25) es mucho más económico que el agua embotellada de 1.5L (~$15 cada una).";
+      return "Busca la marca propia del súper donde compres. En abarrotes básicos puedes ahorrar entre 25-40%.";
+    }
+
+    // Init
+    appendMsg('assistant', '¡Hola! 👋 Soy <strong>AhorraYa</strong>, tu asistente de ahorro en el súper.<br><br>Puedes escribirme lo que necesitas o agregar productos a tu lista para que yo analice cómo ahorrar. ¿Empezamos? 🛒');
+  </script>
+</body>
+</html>
